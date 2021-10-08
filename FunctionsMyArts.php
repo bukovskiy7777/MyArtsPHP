@@ -123,6 +123,15 @@
 			return json_encode($response);
 			
 		}
+
+		
+		public function insertLogs($userUniqueId, $operation) {
+			$db = $this -> db;
+
+			$logs = $db -> insertLogs($operation, $userUniqueId);
+			
+		}
+
 		
 		public function getMuseumMakersList($userUniqueId, $artProviderId) {
 			$db = $this -> db;

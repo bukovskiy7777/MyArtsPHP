@@ -15,6 +15,9 @@
 
 		$data = json_decode(file_get_contents("php://input"));
 
+
+		$fun -> insertLogs($data -> userUniqueId, $data -> operation);
+
 		if(isset($data -> operation)) {
 			$operation = $data -> operation;
 
