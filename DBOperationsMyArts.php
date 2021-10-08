@@ -104,6 +104,23 @@
 			
 			return $artProvider;
 		}
+
+
+		public function insertLogs($operation, $userUniqueId) {
+			
+			$sql = "INSERT MyArtsMuseumLogs (operation, userUniqueId) VALUES (:operation, :userUniqueId)";
+			$query = $this -> conn -> prepare($sql);
+			$query -> execute(array(':operation' => $operation, ':userUniqueId' => $userUniqueId));
+			$count = $query -> rowCount();
+			
+			if($count == 1){
+				return true;
+			} else {
+				return false;
+			}
+
+		}
+
 		
 		public function getListMakersByMuseum($artProviderId) {
 			
