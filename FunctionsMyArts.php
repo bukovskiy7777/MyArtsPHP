@@ -806,24 +806,23 @@
 			$count = $pageSize;
 			$offset = $pageSize * ($pageNumber - 1);
 			
-			$listObjects = $db -> getCultureList($count, $offset);
-			sort($listObjects);
-			
 			$listAttribute = array();
-			for ($i = 0; $i < count($listObjects); $i++) {
-				$attribute = $db -> getAttributeCulture ($listObjects[$i]);
-				//$attribute -> itemsCount = $db -> getArtCountCulture($attribute -> text);
-				$listAttribute[] = $attribute;
+			$listAttribute = $db -> getAttributeCulture($count, $offset);
+
+			$list = array();
+			for ($i = 0; $i < count($listAttribute); $i++) {
+				$listAttribute[$i] -> itemsCount = $db -> getArtCountCulture($listAttribute[$i] -> text);
+				$list[] = $listAttribute[$i];
 			}
-			
-			if(!$listAttribute) {
+
+			if(!$list) {
 				$response["result"] = "failure";
 				$response["message"] = "Could not get data from DB";
 				return json_encode($response);
 			} else {
 				$response["result"] = "success";
 				$response["message"] = "List of arts";
-				$response["listAttribute"] = $listAttribute;
+				$response["listAttribute"] = $list;
 				return json_encode($response);
 			}
 		}

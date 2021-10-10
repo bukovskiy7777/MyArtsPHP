@@ -108,7 +108,7 @@
 
 		public function insertLogs($operation, $userUniqueId) {
 			
-			$sql = "INSERT MyArtsMuseumLogs (operation, userUniqueId) VALUES (:operation, :userUniqueId)";
+			$sql = "INSERT MyArtsLogs (operation, userUniqueId) VALUES (:operation, :userUniqueId)";
 			$query = $this -> conn -> prepare($sql);
 			$query -> execute(array(':operation' => $operation, ':userUniqueId' => $userUniqueId));
 			$count = $query -> rowCount();
@@ -862,37 +862,22 @@
 
 
 
-		public function getCultureList($count, $offset) {
-			
+
+		public function getAttributeCulture($count, $offset) {
+
 			$list = array();
 			
-			$sql = "SELECT DISTINCT artistCulture FROM ArtWorks WHERE artistCulture <> '' LIMIT :offset, :count";
+			$sql = "SELECT * from ArtWorks Where artistCulture <> '' GROUP BY artistCulture LIMIT :offset, :count";
 			$query = $this -> conn -> prepare($sql);
 			$query->bindParam(':count', $count, PDO::PARAM_INT);
 			$query->bindParam(':offset', $offset, PDO::PARAM_INT);
 			$query -> execute();
-			
+
 			while ($obj = $query -> fetchObject()) {
-				$culture = $obj -> artistCulture;
-				$list[] = $culture;
-			}
+
+				$attribute = new stdClass();
 			
-			return $list;
-		}
-		
-		public function getAttributeCulture($culture) {
-			
-			$str = '%'.$culture.'%';
-			
-			$sql = "SELECT * FROM ArtWorks WHERE artistCulture = :culture or artistLongBio like :str LIMIT 1";
-			$query = $this -> conn -> prepare($sql);
-			$query -> execute(array(':culture' => $culture, ':str' => $str));
-			
-			$attribute = new stdClass();
-			
-			if ($obj = $query -> fetchObject()) {
-				
-				$attribute -> text = $culture;
+				$attribute -> text = $obj -> artistCulture;
 				$attribute -> type = "artCulture";
 				$attribute -> itemsCount = 0;
 				$attribute -> artImageUrl = $obj -> imageURL;
@@ -900,21 +885,12 @@
 				$attribute -> artHeight = $obj -> imageHeight;
 				$attribute -> artId = $obj -> objectID;
 				$attribute -> artProviderId = $obj -> providerID;
-				
-			} else {
-				
-				$attribute -> text = $culture;
-				$attribute -> type = "artCulture";
-				$attribute -> itemsCount = 0;
-				$attribute -> artImageUrl = null;
-				$attribute -> artWidth = 0;
-				$attribute -> artHeight = 0;
-				$attribute -> artId = null;
-				$attribute -> artProviderId = "1";
-				
+
+				$list[] = $attribute;
+
 			}
 			
-			return $attribute;
+			return $list;
 			
 		}
 
@@ -1084,6 +1060,20 @@
 			$sql = "SELECT COUNT(1) FROM ArtWorks WHERE objectClassification = :classification";
 			$query = $this -> conn -> prepare($sql);
 			$query -> execute(array(':classification' => $classification));
+			$rowCount = $rowCount + $query-> fetchColumn();
+			
+			return $rowCount;
+		}
+
+		public function getArtCountCulture($culture) {
+
+			//$str = '%'.$culture.'%';
+			
+			$rowCount = 0;
+			
+			$sql = "SELECT COUNT(1) FROM ArtWorks WHERE artistCulture = :culture";
+			$query = $this -> conn -> prepare($sql);
+			$query -> execute(array(':culture' => $culture));
 			$rowCount = $rowCount + $query-> fetchColumn();
 			
 			return $rowCount;
