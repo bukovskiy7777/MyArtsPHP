@@ -528,7 +528,9 @@
 		//echo $fun -> getFilterMakers('All', 1, '', 'All');
 		//echo $fun -> insertMakers();
 		//echo $fun -> getArtsListMaker("Rembrandt", 1, "gggggh");
-		echo $fun -> getCultureList(1);
+		//echo $fun -> getCultureList(1);
+		//echo $fun -> insertMediums();
+		//echo $fun -> getMediumList(1);
 		
 		
 	}

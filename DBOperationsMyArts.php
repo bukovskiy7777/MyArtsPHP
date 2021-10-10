@@ -827,7 +827,7 @@
 
 		public function getTotalMediumCount() {
 			
-			$sqlList = "SELECT count(1) FROM MyArtsMediums "; //and is_public_domain = 1
+			$sqlList = "SELECT count( Distinct(medium) ) FROM MyArtsMediumsList ";
 			$queryList = $this -> conn -> prepare($sqlList);
 			$queryList -> execute();
 			
@@ -967,54 +967,30 @@
 			return $listAttribute;
 		}
 
-		public function getMediumList($offset, $pageSize) {
-			
-			$sqlList = "SELECT medium FROM MyArtsMediums LIMIT :offset, :pageSize";
-			$queryList = $this -> conn -> prepare($sqlList);
-			$queryList->bindParam(':offset', $offset, PDO::PARAM_INT);
-			$queryList->bindParam(':pageSize', $pageSize, PDO::PARAM_INT);
-			$queryList -> execute();
-			
-			$mediumsList = array();
-			while ($medium = $queryList -> fetchColumn()) {
-				$mediumsList[] = $medium;
-			}
-			
-			return $mediumsList;
-		}
-
-		public function getAttributeMedium($list) {
+		public function getAttributeMedium($offset, $pageSize) {
 			
 			$listAttribute = array();
 			
-			$sql = "SELECT * FROM ArtWorks WHERE objectMediums REGEXP :str LIMIT 1";
+			$sql = "SELECT MyArtsMediumsList.*, ArtWorks.* FROM MyArtsMediumsList JOIN ArtWorks ON 
+						MyArtsMediumsList.objectID = ArtWorks.objectID AND 
+						MyArtsMediumsList.providerID = ArtWorks.providerID
+						GROUP BY MyArtsMediumsList.medium LIMIT :offset, :pageSize";
 			$query = $this -> conn -> prepare($sql);
+			$query->bindParam(':offset', $offset, PDO::PARAM_INT);
+			$query->bindParam(':pageSize', $pageSize, PDO::PARAM_INT);
+			$query -> execute();
 			
-			for ($i = 0; $i < count($list); $i++) {
-				
-				$str = '[[:<:]]'.$list[$i].'[[:>:]]';
-				$query -> execute(array(':str' => $str));
+			while ($obj = $query -> fetchObject()) {
 				
 				$attribute = new stdClass();
-				if ($obj = $query -> fetchObject()) {
-					$attribute -> text = $list[$i];
-					$attribute -> type = "artMedium";
-					$attribute -> itemsCount = 0;
-					$attribute -> artImageUrl = $obj -> imageURL;
-					$attribute -> artWidth = $obj -> imageWidth;
-					$attribute -> artHeight = $obj -> imageHeight;
-					$attribute -> artId = $obj -> objectID;
-					$attribute -> artProviderId = $obj -> providerID;
-				} else {
-					$attribute -> text = $list[$i];
-					$attribute -> type = "artMedium";
-					$attribute -> itemsCount = 0;
-					$attribute -> artImageUrl = null;
-					$attribute -> artWidth = 0;
-					$attribute -> artHeight = 0;
-					$attribute -> artId = null;
-					$attribute -> artProviderId = "5";
-				}
+				$attribute -> text = $obj -> medium;
+				$attribute -> type = "artMedium";
+				$attribute -> itemsCount = 0;
+				$attribute -> artImageUrl = $obj -> imageURL;
+				$attribute -> artWidth = $obj -> imageWidth;
+				$attribute -> artHeight = $obj -> imageHeight;
+				$attribute -> artId = $obj -> objectID;
+				$attribute -> artProviderId = $obj -> providerID;
 				$listAttribute[] = $attribute;
 			}
 			
@@ -1538,7 +1514,7 @@
 			return $listArts;
 		}
 		
-		
+
 		
 		
 		

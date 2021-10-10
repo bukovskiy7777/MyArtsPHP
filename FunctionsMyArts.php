@@ -854,17 +854,15 @@
 				return json_encode($response);
 			}
 		}
-		
+
 		public function getMediumList($pageNumber) {
 			$db = $this -> db;
 			
 			$pageSize = 30;
 			$offset = $pageSize * ($pageNumber - 1);
 			
-			$listObjects = $db -> getMediumList($offset, $pageSize);
-			
 			$listAttribute = array();
-			$listAttribute = $db -> getAttributeMedium ($listObjects);
+			$listAttribute = $db -> getAttributeMedium ($offset, $pageSize);
 			
 			if(!$listAttribute) {
 				$response["result"] = "failure";
