@@ -838,7 +838,7 @@
 		
 		public function getTotalTagCount() {
 			
-			$sqlList = "SELECT count(1) FROM MyArtsTags ";
+			$sqlList = "SELECT count( Distinct(tag) ) FROM MyArtsTagsList ";
 			$queryList = $this -> conn -> prepare($sqlList);
 			$queryList -> execute();
 			
