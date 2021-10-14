@@ -531,7 +531,7 @@
 		//echo $fun -> getCultureList(1);
 		//echo $fun -> insertMediums();
 		//echo $fun -> getMediumList(1);
-		
+		//echo $fun -> insertTags();
 		
 	}
 

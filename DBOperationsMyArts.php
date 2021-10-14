@@ -894,73 +894,66 @@
 			
 		}
 
-		public function getTagListAll($offset, $pageSize) {
-			
-			$sqlList = "SELECT tag FROM MyArtsTags LIMIT :offset, :pageSize";
-			$queryList = $this -> conn -> prepare($sqlList);
-			$queryList->bindParam(':offset', $offset, PDO::PARAM_INT);
-			$queryList->bindParam(':pageSize', $pageSize, PDO::PARAM_INT);
-			$queryList -> execute();
-			
-			$tagsList = array();
-			while ($tag = $queryList -> fetchColumn()) {
-				$tagsList[] = $tag;
-			}
-			
-			return $tagsList;
-		}
-		
-		public function getTagListFilter($filter, $offset, $pageSize) {
-			
-			$str = $filter.'%';
-			
-			$sqlList = "SELECT tag FROM MyArtsTags WHERE tag like :str LIMIT :offset, :pageSize";
-			$queryList = $this -> conn -> prepare($sqlList);
-			$queryList->bindParam(':offset', $offset, PDO::PARAM_INT);
-			$queryList->bindParam(':pageSize', $pageSize, PDO::PARAM_INT);
-			$queryList->bindParam(':str', $str, PDO::PARAM_STR);
-			$queryList -> execute();
-			
-			$tagsList = array();
-			while ($tag = $queryList -> fetchColumn()) {
-				$tagsList[] = $tag;
-			}
-			
-			return $tagsList;
-		}
-		
-		public function getAttributeTag($listTags) {
+		public function getAttributeTagAll($offset, $pageSize) {
 			
 			$listAttribute = array();
 			
-			$sql = "SELECT * FROM ArtWorks WHERE objectTags REGEXP :str LIMIT 1";
+			$sql = "SELECT MyArtsTagsList.*, ArtWorks.*, count(*) as itemsCount 
+						FROM MyArtsTagsList JOIN ArtWorks ON 
+						MyArtsTagsList.objectID = ArtWorks.objectID AND 
+						MyArtsTagsList.providerID = ArtWorks.providerID
+						GROUP BY MyArtsTagsList.tag LIMIT :offset, :pageSize";
 			$query = $this -> conn -> prepare($sql);
+			$query->bindParam(':offset', $offset, PDO::PARAM_INT);
+			$query->bindParam(':pageSize', $pageSize, PDO::PARAM_INT);
+			$query -> execute();
 			
-			for ($i = 0; $i < count($listTags); $i++) {
-				
-				$str = '[[:<:]]'.$listTags[$i].'[[:>:]]';
-				$query -> execute(array(':str' => $str));
+			while ($obj = $query -> fetchObject()) {
 				
 				$attribute = new stdClass();
-				if ($obj = $query -> fetchObject()) {
-					$attribute -> text = $listTags[$i];
-					$attribute -> type = "artTag";
-					$attribute -> itemsCount = 0;
-					$attribute -> artImageUrl = $obj -> imageURL;
-					$attribute -> artWidth = $obj -> imageWidth;
-					$attribute -> artHeight = $obj -> imageHeight;
-					$attribute -> artId = $obj -> objectID;
-					$attribute -> artProviderId = $obj -> providerID;
-				} else {
-					$attribute -> text = $listTags[$i];
-					$attribute -> type = "artTag";
-					$attribute -> itemsCount = 0;
-					$attribute -> artImageUrl = null;
-					$attribute -> artWidth = 0;
-					$attribute -> artHeight = 0;
-					$attribute -> artId = null;
-					$attribute -> artProviderId = "5";
-				}
+				$attribute -> text = $obj -> tag;
+				$attribute -> type = "artTag";
+				$attribute -> itemsCount = $obj -> itemsCount;
+				$attribute -> artImageUrl = $obj -> imageURL;
+				$attribute -> artWidth = $obj -> imageWidth;
+				$attribute -> artHeight = $obj -> imageHeight;
+				$attribute -> artId = $obj -> objectID;
+				$attribute -> artProviderId = $obj -> providerID;
+				$listAttribute[] = $attribute;
+			}
+			
+			return $listAttribute;
+		}
+
+		public function getAttributeTagFilter($filter, $offset, $pageSize) {
+			
+			$str = $filter.'%';
+
+			$listAttribute = array();
+			
+			$sql = "SELECT MyArtsTagsList.*, ArtWorks.*, count(*) as itemsCount 
+						FROM MyArtsTagsList JOIN ArtWorks ON 
+						MyArtsTagsList.objectID = ArtWorks.objectID AND 
+						MyArtsTagsList.providerID = ArtWorks.providerID
+						WHERE MyArtsTagsList.tag like :str 
+						GROUP BY MyArtsTagsList.tag LIMIT :offset, :pageSize";
+			$query = $this -> conn -> prepare($sql);
+			$query->bindParam(':offset', $offset, PDO::PARAM_INT);
+			$query->bindParam(':pageSize', $pageSize, PDO::PARAM_INT);
+			$query->bindParam(':str', $str, PDO::PARAM_STR);
+			$query -> execute();
+			
+			while ($obj = $query -> fetchObject()) {
+				
+				$attribute = new stdClass();
+				$attribute -> text = $obj -> tag;
+				$attribute -> type = "artTag";
+				$attribute -> itemsCount = $obj -> itemsCount;
+				$attribute -> artImageUrl = $obj -> imageURL;
+				$attribute -> artWidth = $obj -> imageWidth;
+				$attribute -> artHeight = $obj -> imageHeight;
+				$attribute -> artId = $obj -> objectID;
+				$attribute -> artProviderId = $obj -> providerID;
 				$listAttribute[] = $attribute;
 			}
 			
@@ -971,7 +964,8 @@
 			
 			$listAttribute = array();
 			
-			$sql = "SELECT MyArtsMediumsList.*, ArtWorks.* FROM MyArtsMediumsList JOIN ArtWorks ON 
+			$sql = "SELECT MyArtsMediumsList.*, ArtWorks.*, count(*) as itemsCount 
+						FROM MyArtsMediumsList JOIN ArtWorks ON 
 						MyArtsMediumsList.objectID = ArtWorks.objectID AND 
 						MyArtsMediumsList.providerID = ArtWorks.providerID
 						GROUP BY MyArtsMediumsList.medium LIMIT :offset, :pageSize";
@@ -985,7 +979,7 @@
 				$attribute = new stdClass();
 				$attribute -> text = $obj -> medium;
 				$attribute -> type = "artMedium";
-				$attribute -> itemsCount = 0;
+				$attribute -> itemsCount = $obj -> itemsCount;
 				$attribute -> artImageUrl = $obj -> imageURL;
 				$attribute -> artWidth = $obj -> imageWidth;
 				$attribute -> artHeight = $obj -> imageHeight;
@@ -1513,6 +1507,11 @@
 			
 			return $listArts;
 		}
+
+
+
+
+
 		
 
 		

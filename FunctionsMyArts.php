@@ -833,14 +833,13 @@
 			$pageSize = 30;
 			$offset = $pageSize * ($pageNumber - 1);
 			
-			if (strlen($filter) == 1) {
-				$listTags = $db -> getTagListFilter($filter, $offset, $pageSize);
-			} else {
-				$listTags = $db -> getTagListAll($offset, $pageSize);
-			}
-
 			$listAttribute = array();
-			$listAttribute = $db -> getAttributeTag ($listTags);
+
+			if (strlen($filter) == 1) {
+				$listAttribute = $db -> getAttributeTagFilter($filter, $offset, $pageSize);
+			} else {
+				$listAttribute = $db -> getAttributeTagAll($offset, $pageSize);
+			}
 
 			if(!$listAttribute) {
 				$response["result"] = "failure";
