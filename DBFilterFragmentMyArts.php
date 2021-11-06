@@ -1,14 +1,23 @@
 <?php
 	
-	class DBFilterFragment {
-		private $host = "localhost";
-		private $user = "bukovskiy";
-		private $db = "bukovskiy_1";
-		private $pass = "Amn532fx330";
-		private $conn;
+	require_once 'DBConfig.php';
+
+	class DBFilterFragment extends DBConfig {
+		protected $host;
+		protected $user;
+		protected $db;
+		protected $pass;
+		protected $conn;
 		
 		
-		public function __construct(){
+		public function __construct() {
+
+			$dbConfig = new DBConfig();
+	        $this -> host = $dbConfig -> host;
+	        $this -> user = $dbConfig -> user;
+	        $this -> db = $dbConfig -> db;
+	        $this -> pass = $dbConfig -> pass;
+	        $dbConfig = NULL;
 			
 			$this -> conn = new PDO("mysql:host=".$this -> host.";dbname=".$this -> db, $this -> user, $this -> pass);
 		}

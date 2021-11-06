@@ -6,11 +6,15 @@
 	class Functions {
 		private $db;
 		
+
+
 		public function __construct() {
 			$this -> db = new DBOperations();
 			$this -> dbFilterFragment = new DBFilterFragment();
 		}
-			
+		
+
+
 		
 		public function getMsgParamNotEmpty(){
 			$response["result"] = "failure";
@@ -24,155 +28,11 @@
 			return json_encode($response);
 		}
 
-
-
-
-
-		public function getArtsList ($pageNumber, $userUniqueId) {
-			$db = $this -> db;
-
-			$pageSize = 30;
-			//$count = $pageSize * $pageNumber;
-			$count = $pageSize;
-
-			$listArts = array();
-			$listArts = $this -> getArts($count, $userUniqueId, "Paintings");
-			shuffle($listArts);
-
-			if(!$listArts) {
-				$response["result"] = "failure";
-				$response["message"] = "Could not get data from DB";
-				return json_encode($response);
-			} else {
-				$response["result"] = "success";
-				$response["message"] = "List of arts";
-				$response["listArts"] = $listArts;
-				return json_encode($response);
-			}
-
-		}
-		
-		public function getArts($count, $userUniqueId, $classification) {
-			$db = $this -> db;
-
-			$listArtsOut = array();
-			$listArts = $db -> getArtsList($count, $userUniqueId, $classification);
-			for($i = 0; $i < count($listArts); $i++) {
-				$art = $this -> getArtObject($listArts[$i]);
-				$listArtsOut[] = $art;
-			}
-			return $listArtsOut;
-		}
-		
-
-
-
-		public function getArtsListMuseum ($pageNumber, $userUniqueId, $artProviderId, $oldList) {
-			$db = $this -> db;
-
-			$pageSize = 30;
-			//$count = $pageSize * $pageNumber;
-			$count = $pageSize;
-
-			$listArts = array();
-			$listArts = $this -> getArtsMuseum($count, $userUniqueId, $artProviderId);
-
-			if(!$listArts) {
-				$response["result"] = "failure";
-				$response["message"] = "Could not get data from DB";
-				return json_encode($response);
-			} else {
-				$response["result"] = "success";
-				$response["message"] = "List of arts";
-				$response["listArts"] = $listArts;
-				return json_encode($response);
-			}
-
-		}
-
-		public function getArtsMuseum($count, $userUniqueId, $museumId) {
-			$db = $this -> db;
-
-			$listArtsOut = array();
-			
-			$listArts = array();
-			$list = $db -> getArtsListMuseum($count, $userUniqueId, "Paintings", $museumId);
-			$listArts = array_merge($listArts, $list);
-			$list = $db -> getArtsListMuseum($count/2, $userUniqueId, "Prints", $museumId);
-			$listArts = array_merge($listArts, $list);
-			$list = $db -> getArtsListMuseum($count/2, $userUniqueId, "Drawings", $museumId);
-			$listArts = array_merge($listArts, $list);
-			shuffle($listArts);
-			
-			for($i = 0; $i < $count; $i++) {
-				$art = $this -> getArtObject($listArts[$i]);
-				$listArtsOut[] = $art;
-			}
-			return $listArtsOut;
-		}
-
-		public function getMuseumInfo($userUniqueId, $artProviderId) {
-			$db = $this -> db;
-			
-			$artProvider = $db -> getMuseumInfo($artProviderId);
-			$artProvider -> isLiked = $db -> isMuseumLiked($artProviderId, $userUniqueId);
-			
-			$response["result"] = "success";
-			$response["message"] = "Museum Data Retrieved";
-			$response["artProvider"] = $artProvider;
-			return json_encode($response);
-			
-		}
-
-		
 		public function insertLogs($userUniqueId, $operation) {
 			$db = $this -> db;
 
 			$logs = $db -> insertLogs($operation, $userUniqueId);
-			
 		}
-
-		
-		public function getMuseumMakersList($userUniqueId, $artProviderId) {
-			$db = $this -> db;
-			
-			$listMakers = array();
-			
-			$list = $db -> getListMakersByMuseum($artProviderId);
-			shuffle($list);
-			$list = array_slice($list, 0, 7);
-			
-			$listFavorites = $db -> getListFavoritesMakersByMuseum($artProviderId);
-			$listFavorites = array_slice($listFavorites, 0, 8);
-			$output = array_unique(array_merge($listFavorites, $list), SORT_REGULAR);
-			shuffle($output);
-			
-			for($i = 0; $i < count($output); $i++) {
-				
-				$maker = $db -> getMakerByMuseum ($output[$i], $artProviderId);
-				
-				$isMakerExist =  $db -> isMakerExist($maker -> artMaker);
-				if(!$isMakerExist) {
-					$maker = $this -> getMakerWikiData($maker);
-					$result = $db -> insertMakerWikiData($maker);
-				} else {
-					$maker = $db -> getMakerWikiDataLocal($maker);
-				}
-				
-				$listMakers[] = $maker;
-			}
-			
-			$response["result"] = "success";
-			$response["message"] = "List Makers Retrieved";
-			$response["listMakers"] = $listMakers;
-			return json_encode($response);
-			
-		}
-		
-
-
-
-
 
 		public function isLiked($art, $userUniqueId, $artObjectType) {
 			$db = $this -> db;
@@ -210,19 +70,80 @@
 			}
 		}
 
-		public function getMyFavorites($userUniqueId) {
+		public function artWriteDimens($art) {
 			$db = $this -> db;
 			
-			$listFavorites = array();
-			$listFavorites =  $db -> getMyFavorites($userUniqueId);
+			$artId = $art -> artId;
+			$artProviderId = $art -> artProviderId;
+			$width = $art -> artWidth;
+			$height = $art -> artHeight;
 			
-			$listArts = array();
-			for ($i = 0; $i < count($listFavorites); $i++) {
-				$art = $this -> getArtObject($listFavorites[$i]);
-				$listArts[] = $art;
-			}
+			$result =  $db -> artWriteDimens($artId, $artProviderId, $width, $height);
 
-			if(!$listFavorites) {
+			if(!$result) {
+				$response["result"] = "failure";
+				$response["message"] = "Could not write data to DB";
+				return json_encode($response);
+			} else {
+				$response["result"] = "success";
+				$response["message"] = "Dimens wrote to DB";
+				return json_encode($response);
+			}
+		}
+
+		public function getArtObject ($object) {
+			$db = $this -> db;
+			
+			$art = new stdClass();
+			$art -> artLink = $object -> objectLink;
+			$art -> artId = $object -> objectID;
+			$art -> artTitle = $object -> objectTitle;
+			$art -> artMaker = $object -> artistName;
+				if (empty($art -> artMaker)) { $art -> artMaker = "Unknown Artist"; }
+				$title = $object -> objectTitle;
+				$objectDate = $object -> objectDateStart;
+				$nameAuthor = $object -> artistName;
+			$art -> artLongTitle = implode(", ", array_filter([$title, $objectDate, $nameAuthor])) ;
+			$art -> artImgUrl = $object -> imageURL;
+			$art -> artImgUrlSmall = $object -> imageURLSmall;
+			$art -> artWidth = $object -> imageWidth;
+			$art -> artHeight = $object -> imageHeight;
+				if($object -> imageWidth == 0) {
+					$artDimens = $db -> getArtDimens ($object -> providerId, $art -> artId);
+					$art -> artWidth = $artDimens -> width;
+					$art -> artHeight = $artDimens -> height;
+				}
+			$art -> artistBio = $object -> artistLongBio;
+			$art -> artProviderId = $object -> providerId;
+			$art -> artProvider = $object -> artProvider;
+			$art -> artProviderCountry = $object -> artProviderCountry;
+			$art -> artLogoUrl = $object -> artLogoUrl;
+			
+			$art -> artClassification = $object -> objectClassification;
+				if($object -> likes == 0) { $isLiked = false; } else { $isLiked = true; }
+			$art -> isLiked = $isLiked;
+			$art -> century = $object -> objectCentury;
+				if($object -> objectCentury == 0) { $art -> century = "n.d."; }
+			
+			return $art;
+		}
+
+
+
+
+
+		public function getArtsList ($pageNumber, $userUniqueId) {
+			$db = $this -> db;
+
+			$pageSize = 30;
+			//$count = $pageSize * $pageNumber;
+			$count = $pageSize;
+
+			$listArts = array();
+			$listArts = $this -> getArts($count, $userUniqueId, "Paintings");
+			shuffle($listArts);
+
+			if(!$listArts) {
 				$response["result"] = "failure";
 				$response["message"] = "Could not get data from DB";
 				return json_encode($response);
@@ -234,48 +155,156 @@
 			}
 		}
 		
-		public function getMyFavoritesArtists($userUniqueId) {
+		public function getArts($count, $userUniqueId, $classification) {
 			$db = $this -> db;
-			
-			$listFavorites = array();
-			$listFavorites =  $db -> getMyFavoritesArtists($userUniqueId);
-			
-			$listMakers = array();
-			for ($i = 0; $i < count($listFavorites); $i++) {
-				
-				$maker = new stdClass();
-				$maker -> artMaker = $listFavorites [$i] -> artMaker;
-				$maker -> artistBio = $listFavorites [$i] -> artistBio;
-				//$maker -> artCount = $this -> getArtCountMaker($listFavorites [$i] -> artMaker);
-				$maker -> artCount = 0;
-				$maker -> isLiked = true;
-				$maker -> artHeaderImageUrl = $listFavorites [$i] -> artHeaderImageUrl;
-				$maker -> artWidth = $listFavorites [$i] -> artWidth;
-				$maker -> artHeight = $listFavorites [$i] -> artHeight;
-				$maker -> makerWikiImageUrl = $listFavorites [$i] -> makerWikiImageUrl;
-				$maker -> artHeaderId = $listFavorites [$i] -> artHeaderId;
-				$maker -> artHeaderProviderId = $listFavorites [$i] -> artHeaderProviderId;
-				if ($maker -> artWidth == 0) {
-					$artDimens = $db -> getArtDimens ($maker -> artHeaderProviderId, $maker -> artHeaderId);
-					$maker -> artWidth = $artDimens -> width;
-					$maker -> artHeight = $artDimens -> height;
-				}
-				
-				$listMakers[] = $maker;
-				
-			}
 
-			if(!$listFavorites) {
+			$listArtsOut = array();
+			$listArts = $db -> getArtsList($count, $userUniqueId, $classification);
+			for($i = 0; $i < count($listArts); $i++) {
+				$art = $this -> getArtObject($listArts[$i]);
+				$listArtsOut[] = $art;
+			}
+			return $listArtsOut;
+		}
+		
+
+
+
+
+		public function getArtsListMuseum ($pageNumber, $userUniqueId, $artProviderId, $oldList) {
+			$db = $this -> db;
+
+			$pageSize = 30;
+			//$count = $pageSize * $pageNumber;
+			$count = $pageSize;
+
+			$listArts = array();
+			$listArts = $this -> getArtsMuseum($count, $userUniqueId, $artProviderId);
+
+			if(!$listArts) {
 				$response["result"] = "failure";
 				$response["message"] = "Could not get data from DB";
 				return json_encode($response);
 			} else {
 				$response["result"] = "success";
 				$response["message"] = "List of arts";
-				$response["listMakers"] = $listMakers;
+				$response["listArts"] = $listArts;
 				return json_encode($response);
 			}
 		}
+
+		public function getArtsMuseum($count, $userUniqueId, $museumId) {
+			$db = $this -> db;
+
+			$listArtsOut = array();
+			
+			$listArts = array();
+			$list = $db -> getArtsListMuseum($count, $userUniqueId, "Paintings", $museumId);
+			$listArts = array_merge($listArts, $list);
+			$list = $db -> getArtsListMuseum($count/2, $userUniqueId, "Prints", $museumId);
+			$listArts = array_merge($listArts, $list);
+			$list = $db -> getArtsListMuseum($count/2, $userUniqueId, "Drawings", $museumId);
+			$listArts = array_merge($listArts, $list);
+			shuffle($listArts);
+			
+			for($i = 0; $i < $count; $i++) {
+				$art = $this -> getArtObject($listArts[$i]);
+				$listArtsOut[] = $art;
+			}
+			return $listArtsOut;
+		}
+
+		public function getMuseumInfo($userUniqueId, $artProviderId) {
+			$db = $this -> db;
+			
+			$artProvider = $db -> getMuseumInfo($artProviderId);
+			$artProvider -> isLiked = $db -> isMuseumLiked($artProviderId, $userUniqueId);
+			
+			$response["result"] = "success";
+			$response["message"] = "Museum Data Retrieved";
+			$response["artProvider"] = $artProvider;
+			return json_encode($response);
+		}
+
+		public function getMuseumMakersList($userUniqueId, $artProviderId) {
+			$db = $this -> db;
+			
+			$listMakers = array();
+			
+			$list = $db -> getListMakersByMuseum($artProviderId);
+			shuffle($list);
+			$list = array_slice($list, 0, 7);
+			
+			$listFavorites = $db -> getListFavoritesMakersByMuseum($artProviderId);
+			$listFavorites = array_slice($listFavorites, 0, 8);
+			$output = array_unique(array_merge($listFavorites, $list), SORT_REGULAR);
+			shuffle($output);
+			
+			for($i = 0; $i < count($output); $i++) {
+				
+				$maker = $db -> getMakerByMuseum ($output[$i], $artProviderId);
+				
+				$isMakerExist =  $db -> isMakerExist($maker -> artMaker);
+				if(!$isMakerExist) {
+					$maker = $this -> getMakerWikiData($maker);
+					$result = $db -> insertMakerWikiData($maker);
+				} else {
+					$maker = $db -> getMakerWikiDataLocal($maker);
+				}
+				
+				$listMakers[] = $maker;
+			}
+			
+			$response["result"] = "success";
+			$response["message"] = "List Makers Retrieved";
+			$response["listMakers"] = $listMakers;
+			return json_encode($response);
+		}
+
+		public function isArtProviderLiked($artProvider, $userUniqueId) {
+			$db = $this -> db;
+			
+			$providerId = $artProvider -> providerId;
+			$isLiked =  $db -> isMuseumLiked($providerId, $userUniqueId);
+			
+			if(!$isLiked) {
+				$like =  $db -> likeMuseum($providerId, $userUniqueId);
+				if($like){
+					$artProvider -> isLiked = true;
+					$response["result"] = "success";
+					$response["message"] = "Maker Liked Successfully";
+					$response["artProvider"] = $artProvider;
+					return json_encode($response);
+				} else {
+					$response["result"] = "failure";
+					$response["message"] = "Liked Error";
+					return json_encode($response);
+				}
+			}else {
+				$unLike =  $db -> unLikeMuseum($providerId, $userUniqueId);
+				if($unLike){
+					$artProvider -> isLiked = false;
+					$response["result"] = "success";
+					$response["message"] = "Maker Unliked Successfully";
+					$response["artProvider"] = $artProvider;
+					return json_encode($response);
+				} else {
+					$response["result"] = "failure";
+					$response["message"] = "Unliked Error";
+					return json_encode($response);
+				}
+			}
+		}
+		
+
+
+
+
+		
+
+
+
+
 		
 		public function isMakerLiked($maker, $userUniqueId) {
 			$db = $this -> db;
@@ -432,70 +461,54 @@
 			$response["artMaker"] = $maker;
 			$response["listKeywordFilters"] = $listKeywordFilters;
 			return json_encode($response);
-			
 		}
-		
-		public function isArtProviderLiked($artProvider, $userUniqueId) {
-			$db = $this -> db;
-			
-			$providerId = $artProvider -> providerId;
-			$isLiked =  $db -> isMuseumLiked($providerId, $userUniqueId);
-			
-			if(!$isLiked) {
-				$like =  $db -> likeMuseum($providerId, $userUniqueId);
-				if($like){
-					$artProvider -> isLiked = true;
-					$response["result"] = "success";
-					$response["message"] = "Maker Liked Successfully";
-					$response["artProvider"] = $artProvider;
-					return json_encode($response);
-				} else {
-					$response["result"] = "failure";
-					$response["message"] = "Liked Error";
-					return json_encode($response);
-				}
-			}else {
-				$unLike =  $db -> unLikeMuseum($providerId, $userUniqueId);
-				if($unLike){
-					$artProvider -> isLiked = false;
-					$response["result"] = "success";
-					$response["message"] = "Maker Unliked Successfully";
-					$response["artProvider"] = $artProvider;
-					return json_encode($response);
-				} else {
-					$response["result"] = "failure";
-					$response["message"] = "Unliked Error";
-					return json_encode($response);
-				}
-			}
-		}
-		
-		
-		
-		
-		
-		public function artWriteDimens($art) {
-			$db = $this -> db;
-			
-			$artId = $art -> artId;
-			$artProviderId = $art -> artProviderId;
-			$width = $art -> artWidth;
-			$height = $art -> artHeight;
-			
-			$result =  $db -> artWriteDimens($artId, $artProviderId, $width, $height);
 
-			if(!$result) {
+		public function getArtsListMaker($artMaker, $pageNumber, $userUniqueId) {
+			$db = $this -> db;
+			
+			$pageSize = 30;
+			$count = $pageSize;
+			$offset = $pageSize * ($pageNumber - 1);
+			
+			$string = $artMaker;
+			if (stripos($string, "(") !== false) { $string = substr($string , 0, stripos($string, "(")); }
+			if (stripos($string, "[") !== false) { $string = substr($string , 0, stripos($string, "[")); }
+			if (stripos($string, ",") !== false) { $string = substr($string , 0, stripos($string, ",")); }
+			$string = str_replace("Workshop of ", "", $string);
+			$string = str_replace("Attributed to ", "", $string);
+			$string = str_replace("Style of ", "", $string);
+			$string = str_replace(" the Elder", "", $string);
+			$string = str_replace("Sir ", "", $string);
+
+			$listArts = array();
+			$listArts = $this -> getListMaker($string, $userUniqueId, $count, $offset);
+
+			if(!$listArts) {
 				$response["result"] = "failure";
-				$response["message"] = "Could not write data to DB";
+				$response["message"] = "Could not get data from DB";
 				return json_encode($response);
 			} else {
 				$response["result"] = "success";
-				$response["message"] = "Dimens wrote to DB";
+				$response["message"] = "List of arts";
+				$response["listArts"] = $listArts;
 				return json_encode($response);
 			}
 		}
 		
+		public function getListMaker($artMaker, $userUniqueId, $count, $offset) {
+			$db = $this -> db;
 
+			$listArtsOut = array();
+			$listArts = $db -> getArtsListMaker($artMaker, $userUniqueId, $count, $offset);
+			for($i = 0; $i < count($listArts); $i++) {
+				$art = $this -> getArtObject($listArts[$i]);
+				$listArtsOut[] = $art;
+			}
+			return $listArtsOut;
+		}
+		
+		
+		
 
 
 		
@@ -549,7 +562,6 @@
 				$result =  $db -> updateSearchQuery($searchQuery, $userUniqueId);
 				
 			}
-			
 		}
 		
 		
@@ -626,7 +638,6 @@
 				$response["suggestQuery"] = "";
 				return json_encode($response);
 			}
-			
 		}
 
 		public function deleteSuggest($userUniqueId, $suggestQuery) {
@@ -667,100 +678,10 @@
 				$response["suggestQuery"] = "";
 				return json_encode($response);
 			}
-			
 		}
 
 
 		
-		
-		
-		public function getArtsListMaker($artMaker, $pageNumber, $userUniqueId) {
-			$db = $this -> db;
-			
-			$pageSize = 30;
-			$count = $pageSize;
-			$offset = $pageSize * ($pageNumber - 1);
-			
-			$string = $artMaker;
-			if (stripos($string, "(") !== false) { $string = substr($string , 0, stripos($string, "(")); }
-			if (stripos($string, "[") !== false) { $string = substr($string , 0, stripos($string, "[")); }
-			if (stripos($string, ",") !== false) { $string = substr($string , 0, stripos($string, ",")); }
-			$string = str_replace("Workshop of ", "", $string);
-			$string = str_replace("Attributed to ", "", $string);
-			$string = str_replace("Style of ", "", $string);
-			$string = str_replace(" the Elder", "", $string);
-			$string = str_replace("Sir ", "", $string);
-
-			$listArts = array();
-			$listArts = $this -> getListMaker($string, $userUniqueId, $count, $offset);
-
-			if(!$listArts) {
-				$response["result"] = "failure";
-				$response["message"] = "Could not get data from DB";
-				return json_encode($response);
-			} else {
-				$response["result"] = "success";
-				$response["message"] = "List of arts";
-				$response["listArts"] = $listArts;
-				return json_encode($response);
-			}
-			
-		}
-		
-		public function getListMaker($artMaker, $userUniqueId, $count, $offset) {
-			$db = $this -> db;
-
-			$listArtsOut = array();
-			$listArts = $db -> getArtsListMaker($artMaker, $userUniqueId, $count, $offset);
-			for($i = 0; $i < count($listArts); $i++) {
-				$art = $this -> getArtObject($listArts[$i]);
-				$listArtsOut[] = $art;
-			}
-			return $listArtsOut;
-		}
-		
-		
-		
-		
-		public function getArtObject ($object) {
-			$db = $this -> db;
-			
-			$art = new stdClass();
-			$art -> artLink = $object -> objectLink;
-			$art -> artId = $object -> objectID;
-			$art -> artTitle = $object -> objectTitle;
-			$art -> artMaker = $object -> artistName;
-				if (empty($art -> artMaker)) { $art -> artMaker = "Unknown Artist"; }
-				$title = $object -> objectTitle;
-				$objectDate = $object -> objectDateStart;
-				$nameAuthor = $object -> artistName;
-			$art -> artLongTitle = implode(", ", array_filter([$title, $objectDate, $nameAuthor])) ;
-			$art -> artImgUrl = $object -> imageURL;
-			$art -> artImgUrlSmall = $object -> imageURLSmall;
-			$art -> artWidth = $object -> imageWidth;
-			$art -> artHeight = $object -> imageHeight;
-				if($object -> imageWidth == 0) {
-					$artDimens = $db -> getArtDimens ($object -> providerId, $art -> artId);
-					$art -> artWidth = $artDimens -> width;
-					$art -> artHeight = $artDimens -> height;
-				}
-			$art -> artistBio = $object -> artistLongBio;
-			$art -> artProviderId = $object -> providerId;
-			$art -> artProvider = $object -> artProvider;
-			$art -> artProviderCountry = $object -> artProviderCountry;
-			$art -> artLogoUrl = $object -> artLogoUrl;
-			
-			$art -> artClassification = $object -> objectClassification;
-				if($object -> likes == 0) { $isLiked = false; } else { $isLiked = true; }
-			$art -> isLiked = $isLiked;
-			$art -> century = $object -> objectCentury;
-				if($object -> objectCentury == 0) { $art -> century = "n.d."; }
-			
-			return $art;
-		}
-
-
-
 
 
 		public function getExploreList($userUniqueId) {
@@ -942,6 +863,103 @@
 
 
 
+
+		public function getMyFavorites($userUniqueId) {
+			$db = $this -> db;
+			
+			$listFavorites = array();
+			$listFavorites =  $db -> getMyFavorites($userUniqueId);
+			
+			$listArts = array();
+			for ($i = 0; $i < count($listFavorites); $i++) {
+				$art = $this -> getArtObject($listFavorites[$i]);
+				$listArts[] = $art;
+			}
+
+			if(!$listFavorites) {
+				$response["result"] = "failure";
+				$response["message"] = "Could not get data from DB";
+				return json_encode($response);
+			} else {
+				$response["result"] = "success";
+				$response["message"] = "List of arts";
+				$response["listArts"] = $listArts;
+				return json_encode($response);
+			}
+		}
+		
+		public function getMyFavoritesArtists($userUniqueId) {
+			$db = $this -> db;
+			
+			$listFavorites = array();
+			$listFavorites =  $db -> getMyFavoritesArtists($userUniqueId);
+			
+			$listMakers = array();
+			for ($i = 0; $i < count($listFavorites); $i++) {
+				
+				$maker = new stdClass();
+				$maker -> artMaker = $listFavorites [$i] -> artMaker;
+				$maker -> artistBio = $listFavorites [$i] -> artistBio;
+				//$maker -> artCount = $this -> getArtCountMaker($listFavorites [$i] -> artMaker);
+				$maker -> artCount = 0;
+				$maker -> isLiked = true;
+				$maker -> artHeaderImageUrl = $listFavorites [$i] -> artHeaderImageUrl;
+				$maker -> artWidth = $listFavorites [$i] -> artWidth;
+				$maker -> artHeight = $listFavorites [$i] -> artHeight;
+				$maker -> makerWikiImageUrl = $listFavorites [$i] -> makerWikiImageUrl;
+				$maker -> artHeaderId = $listFavorites [$i] -> artHeaderId;
+				$maker -> artHeaderProviderId = $listFavorites [$i] -> artHeaderProviderId;
+				if ($maker -> artWidth == 0) {
+					$artDimens = $db -> getArtDimens ($maker -> artHeaderProviderId, $maker -> artHeaderId);
+					$maker -> artWidth = $artDimens -> width;
+					$maker -> artHeight = $artDimens -> height;
+				}
+				
+				$listMakers[] = $maker;
+				
+			}
+
+			if(!$listFavorites) {
+				$response["result"] = "failure";
+				$response["message"] = "Could not get data from DB";
+				return json_encode($response);
+			} else {
+				$response["result"] = "success";
+				$response["message"] = "List of arts";
+				$response["listMakers"] = $listMakers;
+				return json_encode($response);
+			}
+		}
+
+		public function getFoldersList($userUniqueId) {
+			$db = $this -> db;
+			
+			$foldersList = $db -> getFoldersList($userUniqueId);
+			for($i = 0; $i < count($foldersList); $i++) {
+				$obj = $db -> getFolderCover($foldersList[$i] -> folderUniqueId);
+				$foldersList[$i] -> artImageUrl = $obj -> artImageUrl;
+				$foldersList[$i] -> artWidth = $obj -> width;
+				$foldersList[$i] -> artHeight = $obj -> height;
+				$foldersList[$i] -> artId = $obj -> artId;
+				$foldersList[$i] -> artProviderId = $obj -> artProviderId;
+			}
+							
+			if(!$foldersList) {
+				$response["result"] = "failure";
+				$response["message"] = "Could not get data from DB";
+				return json_encode($response);
+			} else {
+				$response["result"] = "success";
+				$response["message"] = "List of folders";
+				$response["listFolders"] = $foldersList;
+				return json_encode($response);
+			}
+		}
+
+
+
+
+
 		public function getFolderArts($userUniqueId, $folder) {
 			$db = $this -> db;
 			
@@ -1037,31 +1055,6 @@
 			}
 		}
 
-		public function getFoldersList($userUniqueId) {
-			$db = $this -> db;
-			
-			$foldersList = $db -> getFoldersList($userUniqueId);
-			for($i = 0; $i < count($foldersList); $i++) {
-				$obj = $db -> getFolderCover($foldersList[$i] -> folderUniqueId);
-				$foldersList[$i] -> artImageUrl = $obj -> artImageUrl;
-				$foldersList[$i] -> artWidth = $obj -> width;
-				$foldersList[$i] -> artHeight = $obj -> height;
-				$foldersList[$i] -> artId = $obj -> artId;
-				$foldersList[$i] -> artProviderId = $obj -> artProviderId;
-			}
-							
-			if(!$foldersList) {
-				$response["result"] = "failure";
-				$response["message"] = "Could not get data from DB";
-				return json_encode($response);
-			} else {
-				$response["result"] = "success";
-				$response["message"] = "List of folders";
-				$response["listFolders"] = $foldersList;
-				return json_encode($response);
-			}
-		}
-		
 		public function checkIsFolderExist($folder) {
 			$db = $this -> db;
 			
@@ -1146,7 +1139,6 @@
 				$response["message"] = "ArtWork is already saved";
 				return json_encode($response);
 			}
-			
 		}
 		
 		public function deleteFolder($userUniqueId, $folder){
@@ -1175,37 +1167,6 @@
 			$count = 30;
 			$listArts = array();
 			
-			$listFavObj = $db -> getListFavorites($userUniqueId);
-			
-//--------------------------
-/*
-			if(!empty($listFavObj)) {
-				
-				shuffle($listFavObj);
-				$list = array_slice($listFavObj, 0, $count);
-				
-				$listFavorites = array();
-				for ($i = 0; $i < count($list); $i++) {
-					$artProviderId = $list[$i] -> artProviderId;
-					$artId = $list[$i] -> artId;
-					$object = $db -> getSingleArt ($artId, $userUniqueId, $artProviderId);
-					$art = $this -> getArtObject($object);
-					$listFavorites[] = $art;
-				}
-				
-				$listMakers = array();
-				for ($i = 0; $i < count($listFavorites); $i++) {
-					$artMaker = $listFavorites[$i] -> artMaker;
-					if (!in_array($artMaker, $listMakers)) {
-						$listMakers[] = $artMaker;
-						$artsListMaker = $this -> getArtsListMakerRecommend($artMaker, $userUniqueId);
-						$listArts = array_merge($listArts, $artsListMaker);
-					}
-				}
-			}
-*/
-//----------------------------
-	
 			$listMakers = $db -> getListFavoritesMakers($userUniqueId);
 			
 			if(empty($listMakers) || count($listMakers) < 3) {
@@ -1261,35 +1222,38 @@
 				$response["listArts"] = $listArts;
 				return json_encode($response);
 			}
-
 		}
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
 
+		/*
+			$listFavObj = $db -> getListFavorites($userUniqueId);
 
-
-
-
+			if(!empty($listFavObj)) {
+				
+				shuffle($listFavObj);
+				$list = array_slice($listFavObj, 0, $count);
+				
+				$listFavorites = array();
+				for ($i = 0; $i < count($list); $i++) {
+					$artProviderId = $list[$i] -> artProviderId;
+					$artId = $list[$i] -> artId;
+					$object = $db -> getSingleArt ($artId, $userUniqueId, $artProviderId);
+					$art = $this -> getArtObject($object);
+					$listFavorites[] = $art;
+				}
+				
+				$listMakers = array();
+				for ($i = 0; $i < count($listFavorites); $i++) {
+					$artMaker = $listFavorites[$i] -> artMaker;
+					if (!in_array($artMaker, $listMakers)) {
+						$listMakers[] = $artMaker;
+						$artsListMaker = $this -> getArtsListMakerRecommend($artMaker, $userUniqueId);
+						$listArts = array_merge($listArts, $artsListMaker);
+					}
+				}
+			}
+		*/
+		
+		
 		
 
 	}
