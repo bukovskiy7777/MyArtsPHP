@@ -10,7 +10,7 @@
 	        $this -> host = 'localhost';
 	        $this -> user = 'bukovskiy';
 	        $this -> db = 'bukovskiy_1';
-	        $this -> pass = 'Amn532fx330';
+	        $this -> pass = '*****';
 	    }
 	}
 
